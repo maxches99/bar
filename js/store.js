@@ -1,7 +1,7 @@
 // Данные в памяти + отложенное сохранение в репозиторий.
 // Правка помечает запись localEditedAt — по этой метке ночной синк решает, что везти в Notion.
-import { readJson, commit } from './github.js';
-import { FILES } from './config.js';
+import { readJson, commit } from './github.js?v=20260905144423';
+import { FILES } from './config.js?v=20260905144423';
 
 // Режим предпросмотра: на localhost читаем data/ прямо с диска и ничего не сохраняем.
 // ?remote заставляет и локально ходить в GitHub — чтобы проверить вход и запись.

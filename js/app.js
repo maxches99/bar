@@ -1,8 +1,8 @@
-import { el, norm } from './dom.js';
-import { getToken, unlock, lock } from './auth.js';
-import { diagnoseToken } from './github.js';
-import { load, flush, setStatusHandler, isDirty, LOCAL } from './store.js';
-import * as V from './views.js';
+import { el, norm } from './dom.js?v=20260905144423';
+import { getToken, unlock, lock } from './auth.js?v=20260905144423';
+import { diagnoseToken } from './github.js?v=20260905144423';
+import { load, flush, setStatusHandler, isDirty, LOCAL } from './store.js?v=20260905144423';
+import * as V from './views.js?v=20260905144423';
 
 const $ = (id) => document.getElementById(id);
 

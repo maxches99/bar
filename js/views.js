@@ -1,6 +1,6 @@
-import { el, markdown, norm } from './dom.js';
-import { state, byId, edit, create, remove, options } from './store.js';
-import { LEVELS, RATINGS, FULLNESS, BY_FULLNESS, inStock, ratingRank } from './const.js';
+import { el, markdown, norm } from './dom.js?v=20260905144423';
+import { state, byId, edit, create, remove, options } from './store.js?v=20260905144423';
+import { LEVELS, RATINGS, FULLNESS, BY_FULLNESS, inStock, ratingRank } from './const.js?v=20260905144423';
 
 export const openSheet = (node) => {
   const sheet = document.getElementById('sheet');
