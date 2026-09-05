@@ -1,8 +1,8 @@
-import { el, norm } from './dom.js?v=20260905144423';
-import { getToken, unlock, lock } from './auth.js?v=20260905144423';
-import { diagnoseToken } from './github.js?v=20260905144423';
-import { load, flush, setStatusHandler, isDirty, LOCAL } from './store.js?v=20260905144423';
-import * as V from './views.js?v=20260905144423';
+import { el, norm } from './dom.js?v=20260905145140';
+import { getToken, unlock, lock } from './auth.js?v=20260905145140';
+import { diagnoseToken } from './github.js?v=20260905145140';
+import { load, flush, setStatusHandler, isDirty, LOCAL } from './store.js?v=20260905145140';
+import * as V from './views.js?v=20260905145140';
 
 const $ = (id) => document.getElementById(id);
 
@@ -83,11 +83,32 @@ addEventListener('keydown', (e) => { if (e.key === 'Escape') V.closeSheet(); });
 $('sync').addEventListener('click', () => { if (isDirty()) flush(); });
 
 // ── вход ──────────────────────────────────────────────────────────────────
+// Данные грузим ДО того, как прятать экран входа: иначе при сбое чтения
+// пользователь получает пустую оболочку, а сообщение об ошибке рисуется
+// на уже скрытом экране и его никто не видит.
 async function start() {
+  await load();
   $('lock').hidden = true;
   $('app').hidden = false;
-  await load();
   route();
+}
+
+/** /repos/… открывается по праву Metadata, а /contents/… требует Contents — отсюда самая частая беда. */
+function describeLoadError(err) {
+  if (err.status === 404) {
+    return 'Токен видит репозиторий, но не может читать файлы. Открой токен на github.com/settings/personal-access-tokens и поставь Repository permissions → Contents: Read and write.';
+  }
+  if (err.status === 403) return 'GitHub отклонил чтение (403): либо не выдано право Contents, либо упёрлись в лимит запросов.';
+  if (err.status === 401) return 'GitHub перестал принимать токен — он отозван или истёк.';
+  return `Данные не читаются: ${err.message || err}`;
+}
+
+function showLockError(text) {
+  const error = $('lock-error');
+  $('lock').hidden = false;
+  $('app').hidden = true;
+  error.textContent = text;
+  error.hidden = false;
 }
 
 $('lock-form').addEventListener('submit', async (e) => {
@@ -121,8 +142,7 @@ $('lock-form').addEventListener('submit', async (e) => {
     await start();
   } catch (err) {
     lock();
-    error.textContent = `Токен подошёл, но данные не читаются: ${err.message || err}`;
-    error.hidden = false;
+    showLockError(describeLoadError(err));
   } finally {
     button.disabled = false;
   }
@@ -131,7 +151,8 @@ $('lock-form').addEventListener('submit', async (e) => {
 if (LOCAL) {
   start().catch((err) => { $('view').textContent = String(err); });
 } else if (getToken()) {
-  start().catch(() => { lock(); location.reload(); });
+  // Не перезагружаем страницу по кругу — показываем, что именно сломалось.
+  start().catch((err) => { lock(); showLockError(describeLoadError(err)); $('passphrase').focus(); });
 } else {
   $('passphrase').focus();
 }
