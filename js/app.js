@@ -13,7 +13,10 @@ const TABS = {
   dishes:    { title: 'Блюда',    view: V.dishesView,    filters: V.dishFilters,     add: 'dishes' },
 };
 
-const ui = { tab: 'bar', q: '', filter: 'all' };
+// В баре больше половины позиций — справочник ингредиентов с пометкой «Закончилась»,
+// поэтому по умолчанию показываем только то, что реально стоит дома.
+const DEFAULT_FILTER = { bar: 'stock' };
+const ui = { tab: 'bar', q: '', filter: DEFAULT_FILTER.bar };
 const filterMemory = {};
 
 // ── состояние синхронизации в шапке ───────────────────────────────────────
@@ -37,6 +40,7 @@ function render() {
 
   const chips = tab.filters();
   if (!chips.some(([key]) => key === ui.filter)) ui.filter = 'all';
+
   $('filters').replaceChildren(...chips.map(([key, label, count]) =>
     el('button', {
       class: 'chip',
@@ -61,7 +65,7 @@ function route() {
   const tab = location.hash.replace('#/', '') || 'bar';
   if (!TABS[tab]) return location.replace('#/bar');
   ui.tab = tab;
-  ui.filter = filterMemory[tab] || 'all';
+  ui.filter = filterMemory[tab] || DEFAULT_FILTER[tab] || 'all';
   ui.q = '';
   $('search').value = '';
   render();

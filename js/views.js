@@ -63,7 +63,7 @@ export function barView({ q, filter }) {
   let items = state.bottles.filter((b) => !b.archived && matches(b, q, b.category, b.notes, b.mixIdeas));
 
   if (filter === 'stock') items = items.filter(inStock);
-  else if (filter === 'low') items = items.filter((b) => ['Меньше трети', 'Около половины'].includes(b.level));
+  else if (filter === 'low') items = items.filter((b) => b.level === 'Меньше трети');
   else if (filter === 'out') items = items.filter((b) => b.level === 'Закончилась');
   else if (filter?.startsWith('cat:')) items = items.filter((b) => b.category === filter.slice(4));
 
@@ -99,7 +99,7 @@ export function barFilters() {
   return [
     ['all', 'Всё', state.bottles.filter((b) => !b.archived).length],
     ['stock', 'Есть дома', state.bottles.filter((b) => !b.archived && inStock(b)).length],
-    ['low', 'На исходе', state.bottles.filter((b) => ['Меньше трети', 'Около половины'].includes(b.level)).length],
+    ['low', 'На исходе', state.bottles.filter((b) => b.level === 'Меньше трети').length],
     ['out', 'Кончилось', state.bottles.filter((b) => b.level === 'Закончилась').length],
     ...cats.map((c) => [`cat:${c}`, c, state.bottles.filter((b) => !b.archived && b.category === c).length]),
   ].filter(([, , n]) => n > 0);
