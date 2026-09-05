@@ -1,6 +1,6 @@
 import { el, norm } from './dom.js';
 import { getToken, unlock, lock } from './auth.js';
-import { checkToken } from './github.js';
+import { diagnoseToken } from './github.js';
 import { load, flush, setStatusHandler, isDirty, LOCAL } from './store.js';
 import * as V from './views.js';
 
@@ -96,17 +96,33 @@ $('lock-form').addEventListener('submit', async (e) => {
   const error = $('lock-error');
   button.disabled = true;
   error.hidden = true;
+  // Три разные беды — три разных сообщения: фраза, токен, загрузка данных.
   try {
     await unlock($('passphrase').value);
-    if (!(await checkToken())) throw new Error('токен не подходит к репозиторию');
+  } catch {
+    lock();
+    error.textContent = 'Неверная фраза.';
+    error.hidden = false;
+    $('passphrase').select();
+    button.disabled = false;
+    return;
+  }
+
+  const check = await diagnoseToken();
+  if (!check.ok) {
+    lock();
+    error.textContent = check.text;
+    error.hidden = false;
+    button.disabled = false;
+    return;
+  }
+
+  try {
     await start();
   } catch (err) {
     lock();
-    error.textContent = String(err.message || err).includes('токен')
-      ? 'Токен не даёт доступа к репозиторию с данными.'
-      : 'Неверная фраза.';
+    error.textContent = `Токен подошёл, но данные не читаются: ${err.message || err}`;
     error.hidden = false;
-    $('passphrase').select();
   } finally {
     button.disabled = false;
   }

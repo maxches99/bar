@@ -58,9 +58,34 @@ export async function commit(files, message) {
   return newCommit.sha;
 }
 
-export async function checkToken() {
-  const res = await fetch(`${base()}`, {
-    headers: { Authorization: `Bearer ${getToken()}`, Accept: 'application/vnd.github+json' },
-  });
-  return res.ok;
+/**
+ * Проверяет токен и возвращает разбор причины, а не просто «не пустило».
+ * GitHub отвечает 404 и на «репозитория нет», и на «токен его не видит» — для
+ * приватного репозитория это одно и то же, и подсказка должна говорить про доступ.
+ */
+export async function diagnoseToken() {
+  let res;
+  try {
+    res = await fetch(base(), {
+      headers: { Authorization: `Bearer ${getToken()}`, Accept: 'application/vnd.github+json' },
+    });
+  } catch {
+    return { ok: false, reason: 'network', text: 'Нет связи с GitHub. Проверь интернет и попробуй ещё раз.' };
+  }
+  if (res.ok) return { ok: true };
+
+  const where = `${REPO.owner}/${REPO.name}`;
+  if (res.status === 401) {
+    return { ok: false, status: 401, reason: 'bad-token',
+      text: 'GitHub не принял токен: он отозван, истёк или скопирован не полностью. Создай новый и перезапусти encrypt-token.' };
+  }
+  if (res.status === 404) {
+    return { ok: false, status: 404, reason: 'no-access',
+      text: `Токен рабочий, но не видит ${where}. Обычно это Resource owner не ${REPO.owner} или в Repository access выбран другой репозиторий.` };
+  }
+  if (res.status === 403) {
+    return { ok: false, status: 403, reason: 'forbidden',
+      text: 'GitHub запретил запрос (403). Если токен создан в организации, его должен одобрить владелец.' };
+  }
+  return { ok: false, status: res.status, reason: 'other', text: `GitHub ответил ${res.status}.` };
 }
