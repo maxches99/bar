@@ -1,8 +1,8 @@
-import { el, norm } from './dom.js?v=20260905145140';
-import { getToken, unlock, lock } from './auth.js?v=20260905145140';
-import { diagnoseToken } from './github.js?v=20260905145140';
-import { load, flush, setStatusHandler, isDirty, LOCAL } from './store.js?v=20260905145140';
-import * as V from './views.js?v=20260905145140';
+import { el, norm } from './dom.js?v=20260905145553';
+import { getToken, unlock, lock } from './auth.js?v=20260905145553';
+import { diagnoseToken } from './github.js?v=20260905145553';
+import { load, flush, setStatusHandler, isDirty, LOCAL } from './store.js?v=20260905145553';
+import * as V from './views.js?v=20260905145553';
 
 const $ = (id) => document.getElementById(id);
 
@@ -20,12 +20,34 @@ const ui = { tab: 'bar', q: '', filter: DEFAULT_FILTER.bar };
 const filterMemory = {};
 
 // ── состояние синхронизации в шапке ───────────────────────────────────────
-const LABELS = { dirty: 'не сохранено', saving: 'сохраняю…', saved: 'сохранено', error: 'ошибка сохранения' };
+const LABELS = { dirty: 'не сохранено', saving: 'сохраняю…', saved: 'сохранено', error: 'не сохранилось' };
+
+/** Запись идёт через /git/blobs и /git/refs — для них права Contents: Read-only мало. */
+function describeSaveError(err) {
+  if (err?.status === 403 || err?.status === 404) {
+    return 'Правка не сохранилась: у токена нет права на запись. Открой github.com/settings/personal-access-tokens → свой токен → Repository permissions → Contents → Read and write.';
+  }
+  if (err?.status === 401) return 'Правка не сохранилась: GitHub перестал принимать токен — он отозван или истёк.';
+  if (err?.status === 409 || err?.status === 422) return 'Кто-то записал в репозиторий раньше. Нажми «Повторить» — правка наложится на свежую версию.';
+  return `Правка не сохранилась: ${err?.message || err}`;
+}
+
+function showBanner(text) {
+  const banner = $('banner');
+  banner.replaceChildren(
+    el('div', {}, text),
+    el('button', { class: 'btn', onclick: () => { hideBanner(); flush(); } }, 'Повторить'),
+  );
+  banner.hidden = false;
+}
+const hideBanner = () => { $('banner').hidden = true; };
+
 setStatusHandler((stateName, err) => {
   const node = $('sync');
   node.dataset.state = stateName;
   node.textContent = LABELS[stateName] || '';
-  if (err) console.error(err);
+  if (stateName === 'error') { console.error(err); showBanner(describeSaveError(err)); }
+  if (stateName === 'saving' || stateName === 'saved') hideBanner();
   if (stateName === 'saved') setTimeout(() => { if (!isDirty()) node.textContent = ''; }, 2000);
 });
 

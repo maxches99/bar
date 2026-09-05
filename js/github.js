@@ -1,7 +1,7 @@
 // Чтение и запись данных в приватном репозитории через GitHub API.
 // Запись — одним коммитом на все изменённые файлы (Git Data API), чтобы не было полусохранённых состояний.
-import { REPO } from './config.js?v=20260905145140';
-import { getToken } from './auth.js?v=20260905145140';
+import { REPO } from './config.js?v=20260905145553';
+import { getToken } from './auth.js?v=20260905145553';
 
 const base = () => `https://api.github.com/repos/${REPO.owner}/${REPO.name}`;
 
