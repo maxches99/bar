@@ -1,0 +1,11 @@
+{
+  "name": "Домашний бар",
+  "short_name": "Бар",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#12100e",
+  "theme_color": "#12100e",
+  "icons": [
+    { "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%2312100e'/><text y='.9em' font-size='84'>🍸</text></svg>", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
